@@ -43,6 +43,68 @@ export default class ProductDetailsBase {
 
             this._makeProductVariantAccessible(value, type);
         });
+
+        this.productId = Number(this.context.productId);
+        this.gqlToken = this.context.graphQLToken;
+
+        this._initMultiLineBreakRestriction();
+    }
+
+    _initMultiLineBreakRestriction() {
+        const query = `
+        query GetProductMultiLineSettings($productId: Int!) {
+            site {
+                product(entityId: $productId) {
+                    entityId
+                    name
+                    productOptions(first: 20) {
+                        edges {
+                            node {
+                                entityId
+                                ... on MultiLineTextFieldOption {
+                                    entityId
+                                    maxLines
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }`;
+
+        fetch("/graphql", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${this.gqlToken}`,
+            },
+            body: JSON.stringify({
+                query,
+                variables: { productId: this.productId },
+            })
+        })
+        .then(res => res.json())
+        .then(({ data: { site: { product } } }) => {
+            const { productOptions: { edges: options } } = product;
+            const multiLineFields = options.map(({ node }) => node);
+            this._applyMultiLineBreakRestriction(multiLineFields);
+        });
+    }
+
+    _applyMultiLineBreakRestriction(fields) {
+        fields.forEach(field => {
+            if (field.maxLines) {
+                const $field = document.getElementById(`attribute_textarea_${field.entityId}`);
+                $field.addEventListener("keydown", e => this._handleMultiLineTextChange(e, field.maxLines));
+            }
+        });
+    }
+
+    _handleMultiLineTextChange(event, maxLines) {
+        if (event.key === "Enter") {
+            const lineCount = event.target.value.split("\n").length;
+            if (lineCount >= maxLines) event.preventDefault();
+        }
     }
 
     _makeProductVariantAccessible(variantDomNode, variantType) {

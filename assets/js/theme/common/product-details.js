@@ -1,5 +1,5 @@
 import utils from '@bigcommerce/stencil-utils';
-import ProductDetailsBase, { optionChangeDecorator } from './product-details-base';
+import ProductDetailsBase from './product-details-base';
 import 'foundation-sites/js/foundation/foundation';
 import 'foundation-sites/js/foundation/foundation.reveal';
 import ImageGallery from '../product/image-gallery';
@@ -14,7 +14,7 @@ import bannerUtils from './utils/banner-utils';
 import currencySelector from '../global/currency-selector';
 
 export default class ProductDetails extends ProductDetailsBase {
-    constructor($scope, context, productAttributesData = {}) {
+    constructor($scope, context) {
         super($scope, context);
 
         this.$overlay = $('[data-cart-item-add] .loadingOverlay');
@@ -34,8 +34,6 @@ export default class ProductDetails extends ProductDetailsBase {
         });
 
         const $productOptionsElement = $('[data-product-option-change]', $form);
-        const hasOptions = $productOptionsElement.html().trim().length;
-        const hasDefaultOptions = $productOptionsElement.find('[data-default]').length;
         const $productSwatchGroup = $('[id*="attribute_swatch"]', $form);
         const $productSwatchLabels = $('.form-option-swatch', $form);
         const placeSwatchLabelImage = (_, label) => {
@@ -84,18 +82,6 @@ export default class ProductDetails extends ProductDetailsBase {
                 this.addProductToCart(event, $form[0]);
             }
         });
-
-        // Update product attributes. Also update the initial view in case items are oos
-        // or have default variant properties that change the view
-        if ((isEmpty(productAttributesData) || hasDefaultOptions) && hasOptions) {
-            const $productId = $('[name="product_id"]', $form).val();
-            const optionChangeCallback = optionChangeDecorator.call(this, hasDefaultOptions);
-
-            utils.api.productAttributes.optionChange($productId, $form.serialize(), 'products/bulk-discount-rates', optionChangeCallback);
-        } else {
-            this.updateProductAttributes(productAttributesData);
-            bannerUtils.dispatchProductBannerEvent(productAttributesData);
-        }
 
         $productOptionsElement.show();
 

@@ -43,6 +43,11 @@ export default class ProductDetailsBase {
 
             this._makeProductVariantAccessible(value, type);
         });
+
+        if (this.context.outOfStock) {
+            const outOfStockAlert = this.context.outOfStockMessage || this.context.soldOutMessage;
+            this.showMessageBox(outOfStockAlert);
+        }
     }
 
     _makeProductVariantAccessible(variantDomNode, variantType) {
@@ -246,10 +251,9 @@ export default class ProductDetailsBase {
         }
 
         // if stock view is on (CP settings)
-        if (viewModel.stock.$container.length && isNumber(data.stock)) {
-            // if the stock container is hidden, show
+        if (viewModel.stock.$container.length && isNumber(data.stock) && Number(data.stock) > 0) {
+            // if the stock container is hidden, show it if the stock is above 0
             viewModel.stock.$container.removeClass('u-hiddenVisually');
-
             viewModel.stock.$input.text(data.stock);
         } else {
             viewModel.stock.$container.addClass('u-hiddenVisually');
@@ -265,10 +269,13 @@ export default class ProductDetailsBase {
             viewModel.$bulkPricing.html('');
         }
 
-        const addToCartWrapper = $('#add-to-cart-wrapper');
+        const addToCartButton = $('#form-action-addToCart-wrapper');
 
-        if (addToCartWrapper.is(':hidden') && data.purchasable) {
-            addToCartWrapper.show();
+        const canPurchase = data.purchasable && data.instock;
+        if (addToCartButton.is(':hidden') && canPurchase) {
+            addToCartButton.show();
+        } else if (addToCartButton.is(':visible') && !canPurchase) {
+            addToCartButton.hide();
         }
     }
 

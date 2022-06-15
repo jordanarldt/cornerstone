@@ -1,0 +1,10 @@
+<!-- Inject the storefront API token into the jsContext as "graphQLToken" -->
+{{inject 'graphQLToken' settings.storefront_api.token}}
+
+{{#partial "page"}}
+
+<div id="react-root"></div>
+
+{{/partial}}
+
+{{> layout/base}}
